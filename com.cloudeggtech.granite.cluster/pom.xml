@@ -1,0 +1,28 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+		http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>com.cloudeggtech.granite</groupId>
+		<artifactId>com.cloudeggtech.granite</artifactId>
+		<version>0.2.1.RELEASE</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+
+	<groupId>com.cloudeggtech.granite</groupId>
+	<artifactId>com.cloudeggtech.granite.cluster</artifactId>
+	<packaging>pom</packaging>
+	<name>XMPP Server Deploy Cluster Plugins and Tools</name>
+
+	<modules>
+		<module>com.cloudeggtech.granite.cluster.node</module>
+		<module>com.cloudeggtech.granite.cluster.session</module>
+		<module>com.cloudeggtech.granite.cluster.integration</module>
+		<module>com.cloudeggtech.granite.cluster.dba</module>
+		<module>com.cloudeggtech.granite.cluster.auth</module>
+		<module>com.cloudeggtech.granite.cluster.xeps.ibr</module>
+		<module>com.cloudeggtech.granite.cluster.im</module>
+	</modules>
+	
+</project>

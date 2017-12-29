@@ -1,0 +1,16 @@
+#-----------------------------------------------------------------
+# Use this file to add customized Bnd instructions for the bundle
+#-----------------------------------------------------------------
+
+Granite-Application-Component-Scan: true
+
+Granite-Presence-Processors: com.cloudeggtech.granite.im.StandardPresenceProcessor,\
+ com.cloudeggtech.granite.im.SubscriptionProcessor
+	 
+Granite-Message-Processors: com.cloudeggtech.granite.im.StandardMessageProcessor
+
+Granite-Xep-Processors: xep=iq->query|jabber:iq:roster;\
+ class=com.cloudeggtech.granite.im.RosterProcessor
+ 
+Granite-Event-Listeners: event=com.cloudeggtech.granite.framework.im.ResourceAvailabledEvent;\
+ event-listener=com.cloudeggtech.granite.im.ResourceAvailabledEventListener

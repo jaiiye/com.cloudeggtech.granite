@@ -1,0 +1,10 @@
+#-----------------------------------------------------------------
+# Use this file to add customized Bnd instructions for the bundle
+#-----------------------------------------------------------------
+
+Granite-Component-Scan: true
+
+Granite-Event-Listeners: event=com.cloudeggtech.granite.framework.core.event.ConnectionClosedEvent;\
+ event-listener=com.cloudeggtech.granite.framework.im.ConnectionClosedListener
+
+Granite-Session-Listeners: com.cloudeggtech.granite.framework.im.SessionListener

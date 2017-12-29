@@ -1,0 +1,28 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+		http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>com.cloudeggtech.granite</groupId>
+		<artifactId>com.cloudeggtech.granite</artifactId>
+		<version>0.2.1.RELEASE</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+
+	<groupId>com.cloudeggtech.granite.xeps</groupId>
+	<artifactId>com.cloudeggtech.granite.xeps</artifactId>
+	<packaging>pom</packaging>
+	<name>XEP Plugins</name>
+
+	<modules>
+		<module>com.cloudeggtech.granite.xeps.ping</module>
+		<module>com.cloudeggtech.granite.xeps.disco</module>
+		<module>com.cloudeggtech.granite.xeps.muc</module>
+		<module>com.cloudeggtech.granite.xeps.msgoffline</module>
+		<module>com.cloudeggtech.granite.xeps.ibr</module>
+		<module>com.cloudeggtech.granite.xeps.component</module>
+	</modules>
+
+</project>

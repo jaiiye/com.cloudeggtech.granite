@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://maven.apache.org/POM/4.0.0"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+	<modelVersion>4.0.0</modelVersion>
+	
+	<parent>
+        <groupId>com.cloudeggtech.granite</groupId>
+        <artifactId>com.cloudeggtech.granite.lite</artifactId>
+        <version>0.2.1.RELEASE</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    
+	<properties>
+		<bundle.symbolicName>com.cloudeggtech.granite.lite.auth</bundle.symbolicName>
+		<bundle.namespace>com.cloudeggtech.granite.lite.auth</bundle.namespace>
+	</properties>
+	
+	<groupId>com.cloudeggtech.granite.lite</groupId>
+	<artifactId>com.cloudeggtech.granite.lite.auth</artifactId>
+	<name>${bundle.symbolicName}</name>
+
+	<dependencies>
+		<dependency>
+			<groupId>com.cloudeggtech.granite.framework.plumbing</groupId>
+			<artifactId>com.cloudeggtech.granite.framework.plumbing.mybatis</artifactId>
+		</dependency>
+	</dependencies>
+
+</project>
