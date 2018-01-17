@@ -23,12 +23,20 @@
 
 	<dependencies>
 		<dependency>
+			<groupId>org.apache.ignite</groupId>
+			<artifactId>ignite-core</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>com.cloudeggtech.granite.framework.plumbing</groupId>
 			<artifactId>com.cloudeggtech.granite.framework.plumbing.spring</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>com.cloudeggtech.granite</groupId>
 			<artifactId>com.cloudeggtech.granite.im</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.cloudeggtech.granite.cluster</groupId>
+			<artifactId>com.cloudeggtech.granite.cluster.dba</artifactId>
 		</dependency>
 	</dependencies>
 

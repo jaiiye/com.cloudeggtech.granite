@@ -1,18 +1,23 @@
 package com.cloudeggtech.granite.cluster.im;
 
+import org.apache.ignite.Ignite;
 import org.springframework.stereotype.Component;
 
 import com.cloudeggtech.basalt.protocol.core.JabberId;
 import com.cloudeggtech.basalt.protocol.im.stanza.Presence;
+import com.cloudeggtech.granite.framework.core.annotations.Dependency;
 import com.cloudeggtech.granite.framework.im.IResource;
 import com.cloudeggtech.granite.framework.im.IResourcesRegister;
 import com.cloudeggtech.granite.framework.im.IResourcesService;
 
 @Component
 public class ResourcesService implements IResourcesService, IResourcesRegister {
-
+	@Dependency("ignite")
+	private Ignite ignite;
+	
 	@Override
 	public boolean register(JabberId jid) {
+		
 		// TODO Auto-generated method stub
 		return false;
 	}

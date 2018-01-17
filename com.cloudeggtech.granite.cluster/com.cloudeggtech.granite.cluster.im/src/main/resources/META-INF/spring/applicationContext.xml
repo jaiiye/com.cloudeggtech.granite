@@ -15,6 +15,8 @@
 				
 		<context:component-scan  base-package="com.cloudeggtech.granite.cluster.im"/>
 		
+		<osgi:reference id="database" interface="com.mongodb.client.MongoDatabase"/>
+		
 		<granite:component component-id="resources.service" ref="resourcesService"/>
 		<granite:component component-id="resources.register" ref="resourcesService"/>		
 </beans>

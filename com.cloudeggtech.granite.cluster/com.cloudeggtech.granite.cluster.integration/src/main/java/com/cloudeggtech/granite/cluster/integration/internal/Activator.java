@@ -41,6 +41,7 @@ import com.cloudeggtech.granite.cluster.integration.ignite.config.StorageGlobal;
 import com.cloudeggtech.granite.cluster.node.commons.deploying.DeployPlan;
 import com.cloudeggtech.granite.cluster.node.commons.deploying.DeployPlanException;
 import com.cloudeggtech.granite.cluster.node.commons.deploying.DeployPlanReader;
+import com.cloudeggtech.granite.framework.core.IApplication;
 import com.cloudeggtech.granite.framework.core.commons.osgi.OsgiUtils;
 import com.cloudeggtech.granite.framework.core.commons.utils.IoUtils;
 import com.cloudeggtech.granite.framework.core.repository.AbstractComponentInfo;
@@ -263,7 +264,7 @@ public class Activator extends IgniteAbstractOsgiContextActivator {
 
 	@Override
 	protected void onAfterStart(BundleContext ctx, Throwable t) {
-		String deployFilePath = System.getProperty("granite.deploy.file");
+		String deployFilePath = System.getProperty("granite.deploy.plan.file");
 		DeployPlan deployConfiguration;
 		try {
 			deployConfiguration = new DeployPlanReader().read(new File(deployFilePath).toPath());
@@ -274,6 +275,7 @@ public class Activator extends IgniteAbstractOsgiContextActivator {
 		runtimeConfiguration = new RuntimeConfiguration(System.getProperty(PROPERTY_KEY_NODE_TYPE), deployConfiguration);
 		
 		exportGraniteComponents(ctx);
+		exportGraniteAppComponents(ctx);
 		
 		if (isPersistenceEnabled()) {
 			ignite.active(true);
@@ -305,6 +307,53 @@ public class Activator extends IgniteAbstractOsgiContextActivator {
 		} catch (InvalidSyntaxException e) {
 			throw new RuntimeException("Invalid filter for framework component collector.", e);
 		}
+	}
+	
+	private void exportGraniteAppComponents(BundleContext ctx) {
+		IComponentCollector componentCollector = OsgiUtils.getAppComponentCollector(ctx);
+		if (componentCollector != null) {
+			componentCollector.componentFound(new IgniteAppComponentInfo(ctx));
+		}
+		
+		try {
+			ctx.addServiceListener(new ServiceListener() {
+				
+				@Override
+				public void serviceChanged(ServiceEvent event) {
+					ServiceReference<?> sr = event.getServiceReference();
+					IComponentCollector componentCollector = (IComponentCollector)bundleContext.getService(sr);
+					
+					if (event.getType() == ServiceEvent.REGISTERED) {
+						componentCollector.componentFound(new IgniteAppComponentInfo(bundleContext));
+					}
+				}
+			}, String.format("(&(%s=%s)(%s=%s))", Constants.OBJECTCLASS, IComponentCollector.class.getName(),
+					Constants.SERVICE_INTENTS, IApplication.GRANITE_APP_COMPONENT_COLLECTOR));
+		} catch (InvalidSyntaxException e) {
+			throw new RuntimeException("Invalid filter for application component collector.", e);
+		}
+	}
+	
+	private class IgniteAppComponentInfo extends AbstractComponentInfo {
+		public IgniteAppComponentInfo(BundleContext bundleContext) {
+			super("ignite", Ignite.class, bundleContext, true);
+		}
+
+		@Override
+		public boolean isService() {
+			return false;
+		}
+
+		@Override
+		public IComponentInfo getAliasComponent(String alias) {
+			return null;
+		}
+
+		@Override
+		protected Object doCreate() throws CreationException {
+			return ignite;
+		}
+		
 	}
 	
 	private class IgniteComponentInfo extends AbstractComponentInfo {

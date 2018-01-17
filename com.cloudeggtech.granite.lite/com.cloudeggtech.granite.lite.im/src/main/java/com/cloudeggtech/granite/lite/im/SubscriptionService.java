@@ -14,10 +14,10 @@ import com.cloudeggtech.granite.framework.core.plumbing.persistent.IPersistentOb
 import com.cloudeggtech.granite.framework.core.plumbing.persistent.IPersistentObjectFactoryAware;
 import com.cloudeggtech.granite.framework.im.ISubscriptionService;
 import com.cloudeggtech.granite.framework.im.Subscription;
-import com.cloudeggtech.granite.framework.im.Subscription.State;
 import com.cloudeggtech.granite.framework.im.SubscriptionChanges;
 import com.cloudeggtech.granite.framework.im.SubscriptionNotification;
 import com.cloudeggtech.granite.framework.im.SubscriptionType;
+import com.cloudeggtech.granite.im.SubscriptionStateChangeRules;
 
 @Transactional
 @Component
@@ -88,7 +88,7 @@ public class SubscriptionService implements ISubscriptionService, IPersistentObj
 		}
 		
 		Subscription.State oldState = subscription.getState();
-		Subscription.State newState = getOutboundSubscriptionNewState(oldState, subscriptionType);
+		Subscription.State newState = SubscriptionStateChangeRules.getOutboundSubscriptionNewState(oldState, subscriptionType);
 		
 		if (newState == oldState)
 			return null;
@@ -101,66 +101,6 @@ public class SubscriptionService implements ISubscriptionService, IPersistentObj
 		change.subscription = subscription;
 		
 		return change;
-	}
-
-	private State getOutboundSubscriptionNewState(State oldState, SubscriptionType subscriptionType) {
-		State newState;
-		
-		if (subscriptionType == SubscriptionType.SUBSCRIBE) {
-			if (oldState == State.NONE) {
-				newState = State.NONE_PENDING_OUT;
-			} else if (oldState == State.NONE_PENDING_IN) {
-				newState = State.NONE_PENDING_IN_OUT;
-			} else if (oldState == State.FROM) {
-				newState = State.FROM_PENDING_OUT;
-			} else {
-				newState = oldState;
-			}
-		} else if (subscriptionType == SubscriptionType.UNSUBSCRIBE) {
-			if (oldState == State.NONE_PENDING_OUT) {
-				newState = State.NONE;
-			} else if (oldState == State.NONE_PENDING_IN_OUT) {
-				newState = State.NONE_PENDING_IN;
-			} else if (oldState == State.TO) {
-				newState = State.NONE;
-			} else if (oldState == State.TO_PENDING_IN) {
-				newState = State.NONE_PENDING_IN;
-			} else if (oldState == State.FROM_PENDING_OUT) {
-				newState = State.FROM;
-			} else if (oldState == State.BOTH) {
-				newState = State.FROM;
-			} else {
-				newState = oldState;
-			}
-		} else if (subscriptionType == SubscriptionType.SUBSCRIBED) {
-			if (oldState == State.NONE_PENDING_IN) {
-				newState = State.FROM;
-			} else if (oldState == State.NONE_PENDING_IN_OUT) {
-				newState = State.FROM_PENDING_OUT;
-			} else if (oldState == State.TO_PENDING_IN) {
-				newState = State.BOTH;
-			} else {
-				newState = oldState;
-			}
-		} else { // subscriptionType == SubscriptionType.UNSUBSCRIBED
-			if (oldState == State.NONE_PENDING_IN) {
-				newState = State.NONE;
-			} else if (oldState == State.NONE_PENDING_IN_OUT) {
-				newState = State.NONE_PENDING_OUT;
-			} else if (oldState == State.TO_PENDING_IN) {
-				newState = State.TO;
-			} else if (oldState == State.FROM) {
-				newState = State.NONE;
-			} else if (oldState == State.FROM_PENDING_OUT) {
-				newState = State.NONE_PENDING_OUT;
-			} else if (oldState == State.BOTH) {
-				newState = State.TO;
-			} else {
-				newState = oldState;
-			}
-		}
-		
-		return newState;
 	}
 
 	private SubscriptionChange handleInboundSubscription(JabberId user, JabberId contact, SubscriptionType subscriptionType) {
@@ -176,7 +116,7 @@ public class SubscriptionService implements ISubscriptionService, IPersistentObj
 		}
 		
 		Subscription.State oldState = subscription.getState();
-		Subscription.State newState = getInboundSubscriptionNewState(oldState, subscriptionType);
+		Subscription.State newState = SubscriptionStateChangeRules.getInboundSubscriptionNewState(oldState, subscriptionType);
 		
 		if (newState == oldState)
 			return null;
@@ -193,66 +133,6 @@ public class SubscriptionService implements ISubscriptionService, IPersistentObj
 		change.subscription = subscription;
 		
 		return change;
-	}
-
-	private State getInboundSubscriptionNewState(State oldState, SubscriptionType subscriptionType) {
-		State newState;
-		
-		if (subscriptionType == SubscriptionType.SUBSCRIBE) {
-			if (oldState == State.NONE) {
-				newState = State.NONE_PENDING_IN;
-			} else if (oldState == State.NONE_PENDING_OUT) {
-				newState = State.NONE_PENDING_IN_OUT;
-			} else if (oldState == State.TO) {
-				newState = State.TO_PENDING_IN;
-			} else {
-				newState = oldState;
-			}
-		} else if (subscriptionType == SubscriptionType.UNSUBSCRIBE) {
-			if (oldState == State.NONE_PENDING_IN) {
-				newState = State.NONE;
-			} else if (oldState == State.NONE_PENDING_IN_OUT) {
-				newState = State.NONE_PENDING_OUT;
-			} else if (oldState == State.TO_PENDING_IN) {
-				newState = State.TO;
-			} else if (oldState == State.FROM) {
-				newState = State.NONE;
-			} else if (oldState == State.FROM_PENDING_OUT) {
-				newState = State.NONE_PENDING_OUT;
-			} else if (oldState == State.BOTH) {
-				newState = State.TO;
-			} else {
-				newState = oldState;
-			}
-		} else if (subscriptionType == SubscriptionType.SUBSCRIBED) {
-			if (oldState == State.NONE_PENDING_OUT) {
-				newState = State.TO;
-			} else if (oldState == State.NONE_PENDING_IN_OUT) {
-				newState = State.TO_PENDING_IN;
-			} else if (oldState == State.FROM_PENDING_OUT) {
-				newState = State.BOTH;
-			} else {
-				newState = oldState;
-			}
-		} else { // subscriptionType == SubscriptionType.UNSUBSCRIBED
-			if (oldState == State.NONE_PENDING_OUT) {
-				newState = State.NONE;
-			} else if (oldState == State.NONE_PENDING_IN_OUT) {
-				newState = State.NONE_PENDING_IN;
-			} else if (oldState == State.TO) {
-				newState = State.NONE;
-			} else if (oldState == State.TO_PENDING_IN) {
-				newState = State.NONE_PENDING_IN;
-			} else if (oldState == State.FROM_PENDING_OUT) {
-				newState = State.FROM;
-			} else if (oldState == State.BOTH) {
-				newState = State.FROM;
-			} else {
-				newState = oldState;
-			}
-		}
-		
-		return newState;
 	}
 
 	@Override
