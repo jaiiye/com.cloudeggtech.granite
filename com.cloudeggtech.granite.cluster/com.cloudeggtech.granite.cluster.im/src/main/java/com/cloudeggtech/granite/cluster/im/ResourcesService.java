@@ -1,66 +1,282 @@
 package com.cloudeggtech.granite.cluster.im;
 
+import java.util.concurrent.locks.Lock;
+
 import org.apache.ignite.Ignite;
+import org.apache.ignite.IgniteCache;
 import org.springframework.stereotype.Component;
 
 import com.cloudeggtech.basalt.protocol.core.JabberId;
+import com.cloudeggtech.basalt.protocol.core.ProtocolException;
+import com.cloudeggtech.basalt.protocol.core.stanza.error.InternalServerError;
 import com.cloudeggtech.basalt.protocol.im.stanza.Presence;
 import com.cloudeggtech.granite.framework.core.annotations.Dependency;
+import com.cloudeggtech.granite.framework.core.repository.IInitializable;
 import com.cloudeggtech.granite.framework.im.IResource;
 import com.cloudeggtech.granite.framework.im.IResourcesRegister;
 import com.cloudeggtech.granite.framework.im.IResourcesService;
+import com.cloudeggtech.granite.framework.im.ResourceRegistrationException;
 
 @Component
-public class ResourcesService implements IResourcesService, IResourcesRegister {
+public class ResourcesService implements IResourcesService, IResourcesRegister, IInitializable {
 	@Dependency("ignite")
 	private Ignite ignite;
 	
+	private ResourcesStorageWrapper resourcesStorageWrapper;
+	
 	@Override
-	public boolean register(JabberId jid) {
+	public void init() {
+		resourcesStorageWrapper = new ResourcesStorageWrapper(ignite);
+	}
+	
+	private class ResourcesStorageWrapper {
+		private Ignite ignite;
+		private volatile IgniteCache<JabberId, IResource[]> resourcesStorage;
 		
-		// TODO Auto-generated method stub
-		return false;
+		public ResourcesStorageWrapper(Ignite ignite) {
+			this.ignite = ignite;
+		}
+		
+		public IgniteCache<JabberId, IResource[]> getResourcesStorage() {
+			if (resourcesStorage != null) {
+				return resourcesStorage;
+			}
+			
+			synchronized(ResourcesService.this) {
+				if (resourcesStorage != null)
+					return resourcesStorage;
+				
+				resourcesStorage = ignite.cache("resources");
+			}
+			
+			return resourcesStorage;
+		}
+	}
+	
+	private IgniteCache<JabberId, IResource[]> getResourcesStorage() {
+		return resourcesStorageWrapper.getResourcesStorage();
+	}
+	
+	private void checkFullJid(JabberId jid) {
+		if (jid.getName() == null || jid.getResource() == null) {
+			throw new IllegalArgumentException("The resource registration operation needs a full JID.");
+		}
+	}
+	
+	@Override
+	public void register(final JabberId jid) throws ResourceRegistrationException  {
+		checkFullJid(jid);
+		
+		new ResourceRegistrationTemplate().lockAndRun(jid.getBareId(), new ResourceRegistrationRunner() {
+			@Override
+			public void run() {
+				IResource[] existed = getResourcesStorage().get(jid);
+				if (existed == null) {
+					IResource resource = new Resource(jid);
+					getResourcesStorage().put(jid, new IResource[] {resource});
+				} else {
+					IResource[] afterChange = new IResource[existed.length];
+					for (int i = 0; i < existed.length; i++) {
+						afterChange[i] = existed[i];
+					}
+					afterChange[afterChange.length - 1] = new Resource(jid);
+					
+					getResourcesStorage().put(jid, afterChange);
+				}
+			}
+		});
+	}
+	
+	private class ResourceRegistrationTemplate {
+		public void lockAndRun(JabberId jid, ResourceRegistrationRunner runner) throws ResourceRegistrationException {
+			Lock lock = getResourcesStorage().lock(jid);
+			
+			try {
+				lock.lock();
+				runner.run();
+			} finally {
+				lock.unlock();
+			}
+		}
+	}
+	
+	private interface ResourceRegistrationRunner {
+		void run() throws ResourceRegistrationException;
 	}
 
 	@Override
-	public boolean unregister(JabberId jid) {
-		// TODO Auto-generated method stub
-		return false;
+	public void unregister(final JabberId jid) throws ResourceRegistrationException  {
+		checkFullJid(jid);
+		
+		new ResourceRegistrationTemplate().lockAndRun(jid.getBareId(), new ResourceRegistrationRunner() {
+			@Override
+			public void run() throws ResourceRegistrationException {
+				IResource[] existed = getResourcesStorage().get(jid);
+				if (existed == null) {
+					throw new ResourceRegistrationException(String.format("Can't find resource '%s' in resources storage.", jid));
+				} else {
+					if (existed.length == 1) {
+						if (existed[0].getJid().equals(jid)) {
+							getResourcesStorage().remove(jid);
+							return;
+						} else {
+							throw new ResourceRegistrationException(String.format("Can't find resource '%s' in resources storage.", jid));
+						}
+					}
+					
+					IResource[] afterChange = new IResource[existed.length - 1];
+					int copyingIndex = 0;
+					for (int i = 0; i < existed.length; i++) {
+						if (existed[i].getJid().equals(jid)) {
+							continue;
+						}
+						
+						afterChange[copyingIndex++] = existed[i];
+					}
+					
+					getResourcesStorage().put(jid, afterChange);
+				}
+			}
+		});
 	}
 
 	@Override
-	public boolean setRosterRequested(JabberId jid) {
-		// TODO Auto-generated method stub
-		return false;
+	public void setRosterRequested(final JabberId jid) throws ResourceRegistrationException  {
+		checkFullJid(jid);
+		
+		new ResourceRegistrationTemplate().lockAndRun(jid, new ResourceRegistrationRunner() {
+			
+			@Override
+			public void run() throws ResourceRegistrationException {
+				IResource[] resources = getResources(jid);
+				if (resources == null) {
+					throw new ProtocolException(new InternalServerError(String.format("Can't find resource '%s' in resources storage.", jid)));					
+				}
+				
+				boolean rosterRequestedSet = false;
+				for (int i = 0; i < resources.length; i++) {
+					Resource resource = (Resource)resources[i];
+					if (resource.getJid().equals(jid)) {
+						resource.setRosterRequested(true);
+						rosterRequestedSet = true;
+					}
+				}
+				
+				if (!rosterRequestedSet) {
+					throw new ProtocolException(new InternalServerError(String.format("Can't find resource '%s' in resources storage.", jid)));					
+				}
+				
+				getResourcesStorage().put(jid, resources);
+			}
+		});
 	}
 
 	@Override
-	public boolean setBroadcastPresence(JabberId jid, Presence presence) {
-		// TODO Auto-generated method stub
-		return false;
+	public void setBroadcastPresence(final JabberId jid, final Presence presence) throws ResourceRegistrationException  {
+		checkFullJid(jid);
+		
+		new ResourceRegistrationTemplate().lockAndRun(jid, new ResourceRegistrationRunner() {
+			
+			@Override
+			public void run() throws ResourceRegistrationException {
+				IResource[] resources = getResources(jid);
+				if (resources == null) {
+					throw new ProtocolException(new InternalServerError(String.format("Can't find resource '%s' in resources storage.", jid)));					
+				}
+				
+				boolean broadcastPresenceSet = false;
+				for (int i = 0; i < resources.length; i++) {
+					Resource resource = (Resource)resources[i];
+					if (resource.getJid().equals(jid)) {
+						resource.setBroadcastPresence(presence);
+						broadcastPresenceSet = true;
+					}
+				}
+				
+				if (!broadcastPresenceSet) {
+					throw new ProtocolException(new InternalServerError(String.format("Can't find resource '%s' in resources storage.", jid)));					
+				}
+				
+				getResourcesStorage().put(jid, resources);
+			}
+		});
 	}
 
 	@Override
-	public boolean setAvailable(JabberId jid) {
-		// TODO Auto-generated method stub
-		return false;
+	public void setAvailable(final JabberId jid) throws ResourceRegistrationException  {
+		checkFullJid(jid);
+		
+		new ResourceRegistrationTemplate().lockAndRun(jid, new ResourceRegistrationRunner() {
+			
+			@Override
+			public void run() throws ResourceRegistrationException {
+				IResource[] resources = getResources(jid);
+				if (resources == null) {
+					throw new ProtocolException(new InternalServerError(String.format("Can't find resource '%s' in resources storage.", jid)));					
+				}
+				
+				boolean availableSet = false;
+				for (int i = 0; i < resources.length; i++) {
+					Resource resource = (Resource)resources[i];
+					if (resource.getJid().equals(jid)) {
+						resource.setAvailable(true);
+						availableSet = true;
+					}
+				}
+				
+				if (!availableSet) {
+					throw new ProtocolException(new InternalServerError(String.format("Can't find resource '%s' in resources storage.", jid)));					
+				}
+				
+				getResourcesStorage().put(jid, resources);
+			}
+		});
 	}
 
 	@Override
-	public boolean setDirectedPresence(JabberId from, JabberId to, Presence presence) {
-		// TODO Auto-generated method stub
-		return false;
+	public void setDirectedPresence(final JabberId from, final JabberId to, final Presence presence) throws ResourceRegistrationException  {
+		checkFullJid(from);
+		checkFullJid(to);
+		
+		new ResourceRegistrationTemplate().lockAndRun(to, new ResourceRegistrationRunner() {
+			
+			@Override
+			public void run() throws ResourceRegistrationException {
+				IResource[] resources = getResourcesStorage().get(to.getBareId());
+				boolean directedPresenceSet = false;
+				for (int i = 0; i < resources.length; i++) {
+					if (resources[i].getJid().equals(to)) {
+						Resource resource = (Resource)resources[i];
+						resource.setDirectedPresence(from, presence);
+						directedPresenceSet = true;
+					}
+				}
+				
+				if (directedPresenceSet) {
+					getResourcesStorage().put(to.getBareId(), resources);
+				}
+			}
+		});
 	}
 
 	@Override
 	public IResource[] getResources(JabberId jid) {
-		// TODO Auto-generated method stub
-		return null;
+		return getResourcesStorage().get(jid.getBareId());
 	}
 
 	@Override
-	public IResource getResource(JabberId jid) {
-		// TODO Auto-generated method stub
+	public Resource getResource(JabberId jid) {
+		checkFullJid(jid);
+		
+		IResource[] resources = getResources(jid.getBareId());
+		if (resources == null)
+			return null;
+		
+		for (IResource resource : resources) {
+			if (resource.getJid().equals(jid))
+				return (Resource)resource;
+		}
+		
 		return null;
 	}
 

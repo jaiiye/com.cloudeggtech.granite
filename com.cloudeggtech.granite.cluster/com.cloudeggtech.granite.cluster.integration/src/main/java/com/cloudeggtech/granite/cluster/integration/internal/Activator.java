@@ -36,7 +36,8 @@ import com.cloudeggtech.basalt.protocol.core.JabberId;
 import com.cloudeggtech.granite.cluster.integration.RuntimeConfiguration;
 import com.cloudeggtech.granite.cluster.integration.ignite.config.ClusteringConfig;
 import com.cloudeggtech.granite.cluster.integration.ignite.config.Discovery;
-import com.cloudeggtech.granite.cluster.integration.ignite.config.SessionStorage;
+import com.cloudeggtech.granite.cluster.integration.ignite.config.ResourcesStorage;
+import com.cloudeggtech.granite.cluster.integration.ignite.config.SessionsStorage;
 import com.cloudeggtech.granite.cluster.integration.ignite.config.StorageGlobal;
 import com.cloudeggtech.granite.cluster.node.commons.deploying.DeployPlan;
 import com.cloudeggtech.granite.cluster.node.commons.deploying.DeployPlanException;
@@ -102,16 +103,16 @@ public class Activator extends IgniteAbstractOsgiContextActivator {
 		configureDataRegions();
 		configureCaches();
 		
-		if (isPersistenceEnabled()) {
+		if (isSessionPersistenceEnabled()) {
 			try {
-				deletePersistedData();
+				deletePersistedSessionData();
 			} catch (IOException e) {
 				throw new RuntimeException("Can't delete persisted data.", e);
 			}
 		}
 	}
 
-	private void deletePersistedData() throws IOException {
+	private void deletePersistedSessionData() throws IOException {
 		String workDirectory = configuration.getWorkDirectory();
 		
 		try {
@@ -143,8 +144,8 @@ public class Activator extends IgniteAbstractOsgiContextActivator {
 		}
 	}
 
-	private boolean isPersistenceEnabled() {
-		return clusteringConfig.getSessionStorage().isPersistenceEnabled()/* || clusteringConfig.getCacheStorage().isPersistenceEnabled()*/;
+	private boolean isSessionPersistenceEnabled() {
+		return clusteringConfig.getSessionsStorage().isPersistenceEnabled()/* || clusteringConfig.getCacheStorage().isPersistenceEnabled()*/;
 	}
 
 	/*private DataRegionConfiguration configureCacheDataRegion(CacheStorage cacheStorage) {
@@ -154,38 +155,48 @@ public class Activator extends IgniteAbstractOsgiContextActivator {
 	
 	private void configureCaches() {
 		configuration.setCacheConfiguration(
+				configureResources(),
 				configureSessions()/*,
-				configureCache()*/
+				configureCaches()*/
 		);
 	}
 
-	/*private CacheConfiguration configureCache() {
+	/*private CacheConfiguration configureCaches() {
 		// TODO Auto-generated method stub
 		return null;
 	}*/
+	
+	private CacheConfiguration<JabberId, ISession> configureResources() {
+		CacheConfiguration<JabberId, ISession> cacheConfiguration = new CacheConfiguration<>();
+		cacheConfiguration.setName("resources");
+		cacheConfiguration.setDataRegionName(ResourcesStorage.NAME_RESOURCES_STORAGE);
+		cacheConfiguration.setBackups(1);
+		
+		return cacheConfiguration;
+	}
 
 	private CacheConfiguration<JabberId, ISession> configureSessions() {
 		CacheConfiguration<JabberId, ISession> cacheConfiguration = new CacheConfiguration<>();
 		cacheConfiguration.setName("sessions");
-		cacheConfiguration.setDataRegionName(SessionStorage.NAME_SESSION_STORAGE);
+		cacheConfiguration.setDataRegionName(SessionsStorage.NAME_SESSIONS_STORAGE);
 		cacheConfiguration.setCacheMode(CacheMode.LOCAL);
 		cacheConfiguration.setBackups(0);
 		cacheConfiguration.setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(new Duration(TimeUnit.SECONDS,
-				clusteringConfig.getSessionStorage().getSessionDurationTime())));
+				clusteringConfig.getSessionsStorage().getSessionDurationTime())));
 		
 		return cacheConfiguration;
 	}
 
 	private void configureDataRegions() {
 		dataStorageConfiguration.setDataRegionConfigurations(
-				configureSessionsDataRegion(clusteringConfig.getSessionStorage())/*,
+				configureSessionsDataRegion(clusteringConfig.getSessionsStorage())/*,
 			configureCacheDataRegion(clusteringConfig.getCacheStorage())*/
 		);
 	}
 
-	private DataRegionConfiguration configureSessionsDataRegion(SessionStorage sessionStorage) {
+	private DataRegionConfiguration configureSessionsDataRegion(SessionsStorage sessionStorage) {
 		DataRegionConfiguration dataRegionConfiguration = new DataRegionConfiguration();
-		dataRegionConfiguration.setName(SessionStorage.NAME_SESSION_STORAGE);
+		dataRegionConfiguration.setName(SessionsStorage.NAME_SESSIONS_STORAGE);
 		dataRegionConfiguration.setInitialSize(sessionStorage.getInitSize());
 		dataRegionConfiguration.setMaxSize(sessionStorage.getMaxSize());
 		dataRegionConfiguration.setPersistenceEnabled(sessionStorage.isPersistenceEnabled());
@@ -277,7 +288,7 @@ public class Activator extends IgniteAbstractOsgiContextActivator {
 		exportGraniteComponents(ctx);
 		exportGraniteAppComponents(ctx);
 		
-		if (isPersistenceEnabled()) {
+		if (isSessionPersistenceEnabled()) {
 			ignite.active(true);
 		}
 	}

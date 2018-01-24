@@ -125,7 +125,7 @@ public class StandardClientMessageProcessor implements IClientMessageProcessor, 
 	private class SessionListenerDelegate implements ISessionListener {
 
 		@Override
-		public void sessionEstablishing(IConnectionContext context, JabberId sessionJid) {
+		public void sessionEstablishing(IConnectionContext context, JabberId sessionJid) throws Exception {
 			ISessionListener[] sessionListeners = getSessionListeners();
 			
 			if (sessionListeners == null || sessionListeners.length == 0)
@@ -137,7 +137,7 @@ public class StandardClientMessageProcessor implements IClientMessageProcessor, 
 		}
 		
 		@Override
-		public void sessionEstablished(IConnectionContext context, JabberId sessionJid) {
+		public void sessionEstablished(IConnectionContext context, JabberId sessionJid) throws Exception {
 			ISessionListener[] sessionListeners = getSessionListeners();
 			
 			if (sessionListeners == null || sessionListeners.length == 0)
@@ -149,7 +149,7 @@ public class StandardClientMessageProcessor implements IClientMessageProcessor, 
 		}
 
 		@Override
-		public void sessionClosing(IConnectionContext context, JabberId sessionJid) {
+		public void sessionClosing(IConnectionContext context, JabberId sessionJid) throws Exception {
 			ISessionListener[] sessionListeners = getSessionListeners();
 			
 			if (sessionListeners == null || sessionListeners.length == 0)
@@ -161,7 +161,7 @@ public class StandardClientMessageProcessor implements IClientMessageProcessor, 
 		}
 
 		@Override
-		public void sessionClosed(IConnectionContext context, JabberId sessionJid) {
+		public void sessionClosed(IConnectionContext context, JabberId sessionJid) throws Exception {
 			ISessionListener[] sessionListeners = getSessionListeners();
 			
 			if (sessionListeners == null || sessionListeners.length == 0)
@@ -372,13 +372,22 @@ public class StandardClientMessageProcessor implements IClientMessageProcessor, 
 	
 	@Override
 	public void connectionClosing(IClientConnectionContext context) {
-		sessionListenerDelegate.sessionClosing(context, context.getJid());
-		fireConnectionClosedEvent(context);
+		try {
+			sessionListenerDelegate.sessionClosing(context, context.getJid());
+		} catch (Exception e) {
+			logger.error("Some errors occurred in session closing callback method.", e);
+		}
 	}
 
 	@Override
 	public void connectionClosed(IClientConnectionContext context, JabberId sessionJid) {
-		sessionListenerDelegate.sessionClosed(context, sessionJid);
+		try {
+			sessionListenerDelegate.sessionClosed(context, sessionJid);
+		} catch (Exception e) {
+			logger.error("Some errors occurred in session closed callback method.", e);
+		}
+		
+		fireConnectionClosedEvent(context);
 	}
 	
 	@Dependency("authenticator")

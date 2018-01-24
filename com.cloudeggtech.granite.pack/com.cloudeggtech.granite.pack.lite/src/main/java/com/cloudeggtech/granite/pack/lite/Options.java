@@ -23,6 +23,7 @@ public class Options {
 		update = false;
 		cleanCache = false;
 		cleanUpdate = false;
+		protocol = Protocol.LEP;
 	}
 	
 	public boolean isHelp() {

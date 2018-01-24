@@ -8,6 +8,7 @@ import com.cloudeggtech.basalt.protocol.core.JabberId;
 import com.cloudeggtech.basalt.protocol.core.ProtocolException;
 import com.cloudeggtech.basalt.protocol.core.stanza.Iq;
 import com.cloudeggtech.basalt.protocol.core.stanza.error.BadRequest;
+import com.cloudeggtech.basalt.protocol.core.stream.error.InternalServerError;
 import com.cloudeggtech.basalt.protocol.im.roster.Item;
 import com.cloudeggtech.basalt.protocol.im.roster.Item.Ask;
 import com.cloudeggtech.basalt.protocol.im.roster.Roster;
@@ -22,6 +23,7 @@ import com.cloudeggtech.granite.framework.im.IResource;
 import com.cloudeggtech.granite.framework.im.IResourcesRegister;
 import com.cloudeggtech.granite.framework.im.IResourcesService;
 import com.cloudeggtech.granite.framework.im.ISubscriptionService;
+import com.cloudeggtech.granite.framework.im.ResourceRegistrationException;
 import com.cloudeggtech.granite.framework.im.Subscription;
 import com.cloudeggtech.granite.framework.im.Subscription.State;
 import com.cloudeggtech.granite.framework.processing.ProcessingUtils;
@@ -200,7 +202,11 @@ public class RosterOperator implements IApplicationConfigurationAware, IPersiste
 		
 		context.write(iq);
 		
-		resourcesRegister.setRosterRequested(userJid);
+		try {
+			resourcesRegister.setRosterRequested(userJid);
+		} catch (ResourceRegistrationException e) {
+			throw new ProtocolException(new InternalServerError("Can't set resource's roster to be requested."), e);
+		}
 	}
 	
 	private void rosterUpdate(String user, String contact, String nickname, List<String> groups) {

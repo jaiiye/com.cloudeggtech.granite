@@ -4,11 +4,11 @@ import com.cloudeggtech.basalt.protocol.core.JabberId;
 import com.cloudeggtech.basalt.protocol.im.stanza.Presence;
 
 public interface IResourcesRegister {
-	boolean register(JabberId jid);
-	boolean unregister(JabberId jid);
+	void register(JabberId jid) throws ResourceRegistrationException;
+	void unregister(JabberId jid) throws ResourceRegistrationException;
 	
-	boolean setRosterRequested(JabberId jid);
-	boolean setBroadcastPresence(JabberId jid, Presence presence);
-	boolean setAvailable(JabberId jid);
-	boolean setDirectedPresence(JabberId from, JabberId to, Presence presence);
+	void setRosterRequested(JabberId jid) throws ResourceRegistrationException;
+	void setBroadcastPresence(JabberId jid, Presence presence) throws ResourceRegistrationException;
+	void setAvailable(JabberId jid) throws ResourceRegistrationException;
+	void setDirectedPresence(JabberId from, JabberId to, Presence presence) throws ResourceRegistrationException;
 }

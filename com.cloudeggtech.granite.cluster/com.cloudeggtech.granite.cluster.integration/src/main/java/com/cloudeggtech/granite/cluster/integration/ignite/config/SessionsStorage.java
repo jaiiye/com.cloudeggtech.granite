@@ -1,13 +1,13 @@
 package com.cloudeggtech.granite.cluster.integration.ignite.config;
 
-public class SessionStorage extends Storage {
-	public static final String NAME_SESSION_STORAGE = "session-storage";
+public class SessionsStorage extends Storage {
+	public static final String NAME_SESSIONS_STORAGE = "sessions-storage";
 	
 	private int sessionDurationTime;
 	
-	public SessionStorage() {
-		initSize = 16 * 1024 * 1024;
-		maxSize = 64 * 1024 * 1024;
+	public SessionsStorage() {
+		initSize = 32 * 1024 * 1024;
+		maxSize = 128 * 1024 * 1024;
 		persistenceEnabled = true;
 		sessionDurationTime = 5 * 60;
 	}

@@ -12,6 +12,7 @@ import com.cloudeggtech.basalt.protocol.im.stanza.Presence;
 import com.cloudeggtech.granite.framework.im.IResource;
 import com.cloudeggtech.granite.framework.im.IResourcesRegister;
 import com.cloudeggtech.granite.framework.im.IResourcesService;
+import com.cloudeggtech.granite.framework.im.ResourceRegistrationException;
 
 @Component
 public class ResourcesService implements IResourcesService, IResourcesRegister {
@@ -27,38 +28,47 @@ public class ResourcesService implements IResourcesService, IResourcesRegister {
 	}
 	
 	@Override
-	public boolean register(JabberId jid) {
-		getResourcesByJid(jid).register(jid);
+	public void register(JabberId jid) throws ResourceRegistrationException {
+		checkFullJid(jid);
 		
-		return true;
+		getResourcesByJid(jid).register(jid);
+	}
+	
+	private void checkFullJid(JabberId jid) {
+		if (jid.getName() == null || jid.getResource() == null) {
+			throw new IllegalArgumentException("Need a full JID.");
+		}
 	}
 	
 	@Override
-	public boolean unregister(JabberId jid) {
+	public void unregister(JabberId jid) throws ResourceRegistrationException  {
+		checkFullJid(jid);
+		
 		Resources resources = bareIdAndResources.get(jid.getBareIdString());
 		if (resources != null) {
 			resources.unregister(jid);
 		}
+	}
+	
+	@Override
+	public void setRosterRequested(JabberId jid) throws ResourceRegistrationException  {
+		checkFullJid(jid);
 		
-		return true;
-	}
-	
-	@Override
-	public boolean setRosterRequested(JabberId jid) {
 		getResourcesByJid(jid).setRosterRequested(jid);
-		return true;
 	}
 	
 	@Override
-	public boolean setBroadcastPresence(JabberId jid, Presence presence) {
+	public void setBroadcastPresence(JabberId jid, Presence presence) throws ResourceRegistrationException  {
+		checkFullJid(jid);
+		
 		getResourcesByJid(jid).setPresence(jid, presence);
-		return true;
 	}
 	
 	@Override
-	public boolean setAvailable(JabberId jid) {
+	public void setAvailable(JabberId jid) throws ResourceRegistrationException  {
+		checkFullJid(jid);
+		
 		getResourcesByJid(jid).setAvailable(jid);
-		return true;
 	}
 
 	private Resources getResourcesByJid(JabberId jid) {
@@ -107,7 +117,7 @@ public class ResourcesService implements IResourcesService, IResourcesRegister {
 			return resources.toArray(new IResource[resources.size()]);
 		}
 		
-		public void register(JabberId jid) {
+		public void register(JabberId jid) throws ResourceRegistrationException {
 			synchronized (this) {
 				if (!removed) {
 					Resource resource = new Resource(jid);
@@ -119,7 +129,7 @@ public class ResourcesService implements IResourcesService, IResourcesRegister {
 			ResourcesService.this.register(jid);
 		}
 		
-		public void setRosterRequested(JabberId jid) {
+		public void setRosterRequested(JabberId jid) throws ResourceRegistrationException {
 			synchronized (this) {
 				if (!removed) {
 					for (Resource resource : resources) {
@@ -135,7 +145,7 @@ public class ResourcesService implements IResourcesService, IResourcesRegister {
 			ResourcesService.this.setRosterRequested(jid);
 		}
 		
-		public void setPresence(JabberId jid, Presence presence) {
+		public void setPresence(JabberId jid, Presence presence) throws ResourceRegistrationException {
 			synchronized (this) {
 				if (!removed) {
 					for (Resource resource : resources) {
@@ -151,7 +161,7 @@ public class ResourcesService implements IResourcesService, IResourcesRegister {
 			ResourcesService.this.setBroadcastPresence(jid, presence);
 		}
 		
-		public void setDirectedPresence(JabberId from, Presence presence) {
+		public void setDirectedPresence(JabberId from, Presence presence) throws ResourceRegistrationException {
 			synchronized (this) {
 				if (!removed) {
 					for (Resource resource : resources) {
@@ -165,7 +175,7 @@ public class ResourcesService implements IResourcesService, IResourcesRegister {
 			ResourcesService.this.setDirectedPresence(from, JabberId.parse(bareId), presence);
 		}
 		
-		public void setAvailable(JabberId jid) {
+		public void setAvailable(JabberId jid) throws ResourceRegistrationException {
 			synchronized (this) {
 				if (!removed) {
 					for (Resource resource : resources) {
@@ -181,7 +191,7 @@ public class ResourcesService implements IResourcesService, IResourcesRegister {
 			ResourcesService.this.setAvailable(jid);
 		}
 		
-		public void unregister(JabberId jid) {
+		public void unregister(JabberId jid) throws ResourceRegistrationException {
 			synchronized(this) {
 				if (!removed) {
 					Resource toBeRemoved = null;
@@ -245,7 +255,7 @@ public class ResourcesService implements IResourcesService, IResourcesRegister {
 		}
 
 		@Override
-		public Presence getDirectedPresences(JabberId from) {
+		public Presence getDirectedPresence(JabberId from) {
 			return directedPresences.get(from);
 		}
 	}
@@ -265,7 +275,9 @@ public class ResourcesService implements IResourcesService, IResourcesRegister {
 	}
 
 	@Override
-	public boolean setDirectedPresence(JabberId from, JabberId to, Presence presence) {
+	public void setDirectedPresence(JabberId from, JabberId to, Presence presence) throws ResourceRegistrationException  {
+		checkFullJid(from);
+		
 		if (to.getResource() == null) {
 			getResourcesByJid(to).setDirectedPresence(from, presence);
 		} else {
@@ -274,8 +286,6 @@ public class ResourcesService implements IResourcesService, IResourcesRegister {
 				resource.directedPresences.put(from, presence);
 			}
 		}
-		
-		return true;
 	}
 
 }

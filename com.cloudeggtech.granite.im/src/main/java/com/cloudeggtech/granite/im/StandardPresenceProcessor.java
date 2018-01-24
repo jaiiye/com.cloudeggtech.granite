@@ -96,12 +96,16 @@ public class StandardPresenceProcessor implements IPresenceProcessor, IEventServ
 	}
 	
 	private void processInitialPresence(IProcessingContext context, JabberId user, Presence presence) {
-		if (!resourcesRegister.setAvailable(user)) {
-			throw new ProtocolException(new InternalServerError("Can't set resource to be available."));
+		try {
+			resourcesRegister.setAvailable(user);
+		} catch (Exception e) {
+			throw new ProtocolException(new InternalServerError("Can't set resource to be availabled.", e));
 		}
 		
-		if (!resourcesRegister.setBroadcastPresence(user, presence)) {
-			throw new ProtocolException(new InternalServerError("Can't set resource's initial presence."));
+		try {
+			resourcesRegister.setBroadcastPresence(user, presence);
+		} catch (Exception e) {
+			throw new ProtocolException(new InternalServerError("Can't set resource's initial presence.", e));
 		}
 		
 		eventService.fire(new ResourceAvailabledEvent(user));
@@ -219,8 +223,10 @@ public class StandardPresenceProcessor implements IPresenceProcessor, IEventServ
 	}
 	
 	private void processBroadcastPresence(IProcessingContext context, JabberId user, Presence presence) {
-		if (!resourcesRegister.setBroadcastPresence(user, presence)) {
-			throw new ProtocolException(new InternalServerError("Can't set resource's broadcast presence."));
+		try {
+			resourcesRegister.setBroadcastPresence(user, presence);
+		} catch (Exception e) {
+			throw new ProtocolException(new InternalServerError("Can't set resource's broadcast presence.", e));
 		}
 		
 		List<Subscription> subscriptions = subscriptionService.get(user.getName());
@@ -253,7 +259,11 @@ public class StandardPresenceProcessor implements IPresenceProcessor, IEventServ
 	}
 	
 	private void processDirectedPresence(IProcessingContext context, Presence presence) {
-		resourcesRegister.setDirectedPresence(context.getJid(), presence.getTo(), presence);
+		try {
+			resourcesRegister.setDirectedPresence(context.getJid(), presence.getTo(), presence);
+		} catch (Exception e) {
+			throw new ProtocolException(new InternalServerError("Can't set resource's directed presence.", e));
+		}
 		
 		// Server Rules for Handling XML Stanzas(rfc3920 11)
 		if (presence.getTo().getResource() == null) {

@@ -32,10 +32,10 @@ public class SessionListener implements ISessionListener, IConnectionManagerAwar
 	private static final String MESSAGE_CLOSE_STREAM = oxmFactory.translate(new Stream(true));
 
 	@Override
-	public void sessionEstablished(IConnectionContext context, JabberId sessionJid) {
+	public void sessionEstablished(IConnectionContext context, JabberId sessionJid) throws Exception {
 		try {
 			register.register(sessionJid);
-		} catch (RuntimeException e) {
+		} catch (ResourceRegistrationException e) {
 			logger.error("Can't register resource. JID is {}.", sessionJid);
 			throw e;
 		}
@@ -43,15 +43,15 @@ public class SessionListener implements ISessionListener, IConnectionManagerAwar
 	}
 
 	@Override
-	public void sessionClosing(IConnectionContext context, JabberId sessionJid) {}
+	public void sessionClosing(IConnectionContext context, JabberId sessionJid) throws Exception {}
 	
 	@Override
-	public void sessionClosed(IConnectionContext context, JabberId sessionJid) {
+	public void sessionClosed(IConnectionContext context, JabberId sessionJid) throws Exception {
 		register.unregister(sessionJid);
 	}
 
 	@Override
-	public void sessionEstablishing(IConnectionContext context, JabberId sessionJid) {
+	public void sessionEstablishing(IConnectionContext context, JabberId sessionJid) throws Exception {
 		if (resourceService.getResource(sessionJid) != null) {
 			IClientConnectionContext clientContext = (IClientConnectionContext)connectionManager.
 					getConnectionContext(sessionJid);

@@ -11,8 +11,9 @@ import com.cloudeggtech.granite.framework.core.commons.utils.StringUtils;
 public class ClusteringConfig {
 	private Discovery discovery;
 	private StorageGlobal storageGlobal;
-	private SessionStorage sessionStorage;
-	private CacheStorage cacheStorage;
+	private ResourcesStorage resourcesStorage;
+	private SessionsStorage sessionsStorage;
+	private CachesStorage cachesStorage;
 	
 	public void load(File configFile) {
 		SectionalProperties properties = new SectionalProperties();
@@ -27,40 +28,49 @@ public class ClusteringConfig {
 				discovery = parseDiscovery(properties.getSection(Discovery.NAME_DISCOVERY));
 			} else if (StorageGlobal.NAME_STORAGE_GLOBAL.equals(sectionName)) {
 				storageGlobal = parseStorageGlobal(properties.getSection(StorageGlobal.NAME_STORAGE_GLOBAL));
-			} else if (SessionStorage.NAME_SESSION_STORAGE.equals(sectionName)) {
-				sessionStorage = parseSessionStorage(properties.getSection(SessionStorage.NAME_SESSION_STORAGE));
-			} else if (CacheStorage.NAME_CACHE_STORAGE.equals(sectionName)) {
-				cacheStorage = parseCacheStorage(properties.getSection(CacheStorage.NAME_CACHE_STORAGE));
+			} else if (ResourcesStorage.NAME_RESOURCES_STORAGE.equals(sectionName)) {
+				resourcesStorage = parseResouresStorage(properties.getSection(ResourcesStorage.NAME_RESOURCES_STORAGE));
+			} else if (SessionsStorage.NAME_SESSIONS_STORAGE.equals(sectionName)) {
+				sessionsStorage = parseSessionsStorage(properties.getSection(SessionsStorage.NAME_SESSIONS_STORAGE));
+			} else if (CachesStorage.NAME_CACHES_STORAGE.equals(sectionName)) {
+				cachesStorage = parseCachesStorage(properties.getSection(CachesStorage.NAME_CACHES_STORAGE));
 			} else {
 				throw new IllegalArgumentException(String.format("Invalid section in clustering.ini. Section name: %s", sectionName));
 			}
 		}
 	}
 	
-	private CacheStorage parseCacheStorage(Properties properties) {
+	private CachesStorage parseCachesStorage(Properties properties) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	private SessionStorage parseSessionStorage(Properties properties) {
-		sessionStorage = new SessionStorage();
-		parseStorage(sessionStorage, properties, SessionStorage.NAME_SESSION_STORAGE);
+	private SessionsStorage parseSessionsStorage(Properties properties) {
+		SessionsStorage sessionStorage = new SessionsStorage();
+		parseStorage(sessionStorage, properties, SessionsStorage.NAME_SESSIONS_STORAGE);
 		
 		String sSessionDurationTime = properties.getProperty("session-duration-time");
 		try {
 			sessionStorage.setSessionDurationTime(Integer.parseInt(sSessionDurationTime));
 		} catch (NumberFormatException e) {
-			throw new IllegalArgumentException("Parameter 'session-duration-time' in 'session-storage' section must be an integer.");
+			throw new IllegalArgumentException("Parameter 'session-duration-time' in 'sessions-storage' section must be an integer.");
 		}
 		
 		return sessionStorage;
+	}
+	
+	private ResourcesStorage parseResouresStorage(Properties properties) {
+		ResourcesStorage resourceMgtStorage = new ResourcesStorage();
+		parseStorage(resourceMgtStorage, properties, ResourcesStorage.NAME_RESOURCES_STORAGE);
+		
+		return resourceMgtStorage;
 	}
 
 	private void parseStorage(Storage storage, Properties properties, String storageSectionName) {
 		String initSize = properties.getProperty("init-size");
 		if (initSize != null) {
 			try {
-				setStorageInitSize(sessionStorage, convertToByteSizes(initSize));
+				setStorageInitSize(sessionsStorage, convertToByteSizes(initSize));
 			} catch (NumberFormatException e) {
 				throw new IllegalArgumentException(String.format("Parameter 'init-size' of '%s' configuration section must be an long integer.",
 						storageSectionName));
@@ -70,7 +80,7 @@ public class ClusteringConfig {
 		String maxSize = properties.getProperty("max-size");
 		if (maxSize != null) {
 			try {
-				setStorageMaxSize(sessionStorage, convertToByteSizes(maxSize));
+				setStorageMaxSize(sessionsStorage, convertToByteSizes(maxSize));
 			} catch (Exception e) {
 				throw new IllegalArgumentException(String.format("Parameter 'max-size' of '%s' configuration section must be an long integer.",
 						storageSectionName));
@@ -150,7 +160,7 @@ public class ClusteringConfig {
 		} else if (lastChar == 'g' || lastChar == 'G') {
 			return Long.parseLong(sizeNumberPart) * 1024 * 1024 * 1024;
 		}  else {
-			throw new IllegalArgumentException(String.format("Unknown unit of size: %c.", lastChar));
+			throw new IllegalArgumentException(String.format("Unknown unit of memory size: %c.", lastChar));
 		}
 	}
 
@@ -201,17 +211,24 @@ public class ClusteringConfig {
 		return storageGlobal;
 	}
 	
-	public SessionStorage getSessionStorage() {
-		if (sessionStorage == null)
-			sessionStorage = new SessionStorage();
+	public SessionsStorage getSessionsStorage() {
+		if (sessionsStorage == null)
+			sessionsStorage = new SessionsStorage();
 		
-		return sessionStorage;
+		return sessionsStorage;
 	}
 	
-	public CacheStorage getCacheStorage() {
-		if (cacheStorage == null)
-			cacheStorage = new CacheStorage();
+	public ResourcesStorage getResourcesStorage() {
+		if (resourcesStorage == null)
+			resourcesStorage = new ResourcesStorage();
 		
-		return cacheStorage;
+		return resourcesStorage;
+	}
+	
+	public CachesStorage getCachesStorage() {
+		if (cachesStorage == null)
+			cachesStorage = new CachesStorage();
+		
+		return cachesStorage;
 	}
 }

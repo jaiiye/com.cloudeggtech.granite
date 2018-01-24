@@ -58,7 +58,7 @@ public class ConnectionClosedListener implements IEventListener<ConnectionClosed
 			if (!resource.isAvailable())
 				continue;
 			
-			Presence directedPresence = resource.getDirectedPresences(user);
+			Presence directedPresence = resource.getDirectedPresence(user);
 			if (directedPresence != null && directedPresence.getType() == Presence.Type.UNAVAILABLE)
 				continue;
 			
@@ -86,7 +86,7 @@ public class ConnectionClosedListener implements IEventListener<ConnectionClosed
 			if (!resource.isAvailable())
 				continue;
 			
-			Presence directedPresence = resource.getDirectedPresences(user);
+			Presence directedPresence = resource.getDirectedPresence(user);
 			if (directedPresence != null && directedPresence.getType() == Presence.Type.UNAVAILABLE)
 				continue;
 			

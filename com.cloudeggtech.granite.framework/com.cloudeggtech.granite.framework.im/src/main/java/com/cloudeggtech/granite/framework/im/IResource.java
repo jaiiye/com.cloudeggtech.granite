@@ -8,5 +8,5 @@ public interface IResource {
 	boolean isRosterRequested();
 	Presence getBroadcastPresence();
 	boolean isAvailable();
-	Presence getDirectedPresences(JabberId from);
+	Presence getDirectedPresence(JabberId from);
 }

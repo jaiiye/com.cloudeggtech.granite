@@ -17,17 +17,17 @@ public class SessionManager implements ISessionManager, IInitializable {
 	@Dependency("ignite")
 	private Ignite ignite;
 	
-	private SessionsWrapper sessionsWrapper;
+	private SessionsStorageWrapper sessionsStorageWrapper;
 	
 	@Override
 	public void init() {
-		sessionsWrapper = new SessionsWrapper(ignite);
+		sessionsStorageWrapper = new SessionsStorageWrapper(ignite);
 	}
 	
 	@Override
 	public ISession create(JabberId jid) throws SessionExistsException {
 		ISession session = new Session(jid);
-		if (!getSessions().putIfAbsent(jid, session)) {
+		if (!getSessionsStorage().putIfAbsent(jid, session)) {
 			throw new SessionExistsException();
 		}
 		
@@ -36,24 +36,24 @@ public class SessionManager implements ISessionManager, IInitializable {
 
 	@Override
 	public ISession get(JabberId jid) {
-		return getSessions().get(jid);
+		return getSessionsStorage().get(jid);
 	}
 
 	@Override
 	public boolean exists(JabberId jid) {
-		return getSessions().containsKey(jid);
+		return getSessionsStorage().containsKey(jid);
 	}
 
 	@Override
 	public boolean remove(JabberId jid) {
-		return getSessions().remove(jid);
+		return getSessionsStorage().remove(jid);
 	}
 	
-	private class SessionsWrapper {
+	private class SessionsStorageWrapper {
 		private Ignite ignite;
 		private volatile IgniteCache<JabberId, ISession> sessions;
 		
-		public SessionsWrapper(Ignite ignite) {
+		public SessionsStorageWrapper(Ignite ignite) {
 			this.ignite = ignite;
 		}
 		
@@ -73,13 +73,13 @@ public class SessionManager implements ISessionManager, IInitializable {
 		}
 	}
 	
-	private IgniteCache<JabberId, ISession> getSessions() {
-		return sessionsWrapper.getSessions();
+	private IgniteCache<JabberId, ISession> getSessionsStorage() {
+		return sessionsStorageWrapper.getSessions();
 	}
 
 	@Override
 	public void put(JabberId jid, ISession session) {
-		getSessions().put(jid, session);
+		getSessionsStorage().put(jid, session);
 	}
 	
 }

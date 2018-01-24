@@ -38,6 +38,10 @@
 			<groupId>com.cloudeggtech.granite.cluster</groupId>
 			<artifactId>com.cloudeggtech.granite.cluster.dba</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>javax.cache</groupId>
+			<artifactId>cache-api</artifactId>
+		</dependency>
 	</dependencies>
 
 </project>
