@@ -97,15 +97,15 @@ public class StandardPresenceProcessor implements IPresenceProcessor, IEventServ
 	
 	private void processInitialPresence(IProcessingContext context, JabberId user, Presence presence) {
 		try {
-			resourcesRegister.setAvailable(user);
-		} catch (Exception e) {
-			throw new ProtocolException(new InternalServerError("Can't set resource to be availabled.", e));
-		}
-		
-		try {
 			resourcesRegister.setBroadcastPresence(user, presence);
 		} catch (Exception e) {
 			throw new ProtocolException(new InternalServerError("Can't set resource's initial presence.", e));
+		}
+		
+		try {
+			resourcesRegister.setAvailable(user);
+		} catch (Exception e) {
+			throw new ProtocolException(new InternalServerError("Can't set resource to be availabled.", e));
 		}
 		
 		eventService.fire(new ResourceAvailabledEvent(user));

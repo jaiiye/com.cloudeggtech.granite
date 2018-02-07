@@ -8,6 +8,7 @@ public class SessionsStorage extends Storage {
 	public SessionsStorage() {
 		initSize = 32 * 1024 * 1024;
 		maxSize = 128 * 1024 * 1024;
+		backups = 1;
 		persistenceEnabled = true;
 		sessionDurationTime = 5 * 60;
 	}

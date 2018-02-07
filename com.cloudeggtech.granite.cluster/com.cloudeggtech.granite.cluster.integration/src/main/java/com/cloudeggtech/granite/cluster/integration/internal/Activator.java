@@ -15,7 +15,7 @@ import javax.cache.expiry.Duration;
 import javax.cache.expiry.TouchedExpiryPolicy;
 
 import org.apache.ignite.Ignite;
-import org.apache.ignite.cache.CacheMode;
+import org.apache.ignite.cache.CacheAtomicityMode;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.DataRegionConfiguration;
 import org.apache.ignite.configuration.DataStorageConfiguration;
@@ -155,8 +155,8 @@ public class Activator extends IgniteAbstractOsgiContextActivator {
 	
 	private void configureCaches() {
 		configuration.setCacheConfiguration(
-				configureResources(),
-				configureSessions()/*,
+				configureResources(clusteringConfig.getResourcesStorage().getBackups()),
+				configureSessions(clusteringConfig.getSessionsStorage().getBackups())/*,
 				configureCaches()*/
 		);
 	}
@@ -166,21 +166,21 @@ public class Activator extends IgniteAbstractOsgiContextActivator {
 		return null;
 	}*/
 	
-	private CacheConfiguration<JabberId, ISession> configureResources() {
-		CacheConfiguration<JabberId, ISession> cacheConfiguration = new CacheConfiguration<>();
+	private CacheConfiguration<JabberId, Object[]> configureResources(int backups) {
+		CacheConfiguration<JabberId, Object[]> cacheConfiguration = new CacheConfiguration<>();
 		cacheConfiguration.setName("resources");
 		cacheConfiguration.setDataRegionName(ResourcesStorage.NAME_RESOURCES_STORAGE);
-		cacheConfiguration.setBackups(1);
+		cacheConfiguration.setAtomicityMode(CacheAtomicityMode.TRANSACTIONAL);
+		cacheConfiguration.setBackups(backups >= 0 ? backups : 1);
 		
 		return cacheConfiguration;
 	}
 
-	private CacheConfiguration<JabberId, ISession> configureSessions() {
+	private CacheConfiguration<JabberId, ISession> configureSessions(int backups) {
 		CacheConfiguration<JabberId, ISession> cacheConfiguration = new CacheConfiguration<>();
 		cacheConfiguration.setName("sessions");
 		cacheConfiguration.setDataRegionName(SessionsStorage.NAME_SESSIONS_STORAGE);
-		cacheConfiguration.setCacheMode(CacheMode.LOCAL);
-		cacheConfiguration.setBackups(0);
+		cacheConfiguration.setBackups(backups >= 0 ? backups : 1);
 		cacheConfiguration.setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(new Duration(TimeUnit.SECONDS,
 				clusteringConfig.getSessionsStorage().getSessionDurationTime())));
 		
@@ -189,11 +189,22 @@ public class Activator extends IgniteAbstractOsgiContextActivator {
 
 	private void configureDataRegions() {
 		dataStorageConfiguration.setDataRegionConfigurations(
+				configureResourcesDataRegion(clusteringConfig.getResourcesStorage()),
 				configureSessionsDataRegion(clusteringConfig.getSessionsStorage())/*,
-			configureCacheDataRegion(clusteringConfig.getCacheStorage())*/
+				configureCacheDataRegion(clusteringConfig.getCacheStorage())*/
 		);
 	}
-
+	
+	private DataRegionConfiguration configureResourcesDataRegion(ResourcesStorage resourcesStorage) {
+		DataRegionConfiguration dataRegionConfiguration = new DataRegionConfiguration();
+		dataRegionConfiguration.setName(ResourcesStorage.NAME_RESOURCES_STORAGE);
+		dataRegionConfiguration.setInitialSize(resourcesStorage.getInitSize());
+		dataRegionConfiguration.setMaxSize(resourcesStorage.getMaxSize());
+		dataRegionConfiguration.setPersistenceEnabled(resourcesStorage.isPersistenceEnabled());
+		
+		return dataRegionConfiguration;
+	}
+	
 	private DataRegionConfiguration configureSessionsDataRegion(SessionsStorage sessionStorage) {
 		DataRegionConfiguration dataRegionConfiguration = new DataRegionConfiguration();
 		dataRegionConfiguration.setName(SessionsStorage.NAME_SESSIONS_STORAGE);

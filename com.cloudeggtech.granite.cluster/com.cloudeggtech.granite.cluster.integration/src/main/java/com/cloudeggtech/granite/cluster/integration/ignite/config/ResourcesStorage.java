@@ -6,6 +6,7 @@ public class ResourcesStorage extends Storage {
 	public ResourcesStorage() {
 		initSize = 8 * 1024 * 1024;
 		maxSize = 32 * 1024 * 1024;
+		backups = 1;
 		persistenceEnabled = true;
 	}
 

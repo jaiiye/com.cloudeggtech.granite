@@ -46,31 +46,31 @@ public class ClusteringConfig {
 	}
 
 	private SessionsStorage parseSessionsStorage(Properties properties) {
-		SessionsStorage sessionStorage = new SessionsStorage();
-		parseStorage(sessionStorage, properties, SessionsStorage.NAME_SESSIONS_STORAGE);
+		SessionsStorage sessionsStorage = new SessionsStorage();
+		parseStorage(sessionsStorage, properties, SessionsStorage.NAME_SESSIONS_STORAGE);
 		
 		String sSessionDurationTime = properties.getProperty("session-duration-time");
 		try {
-			sessionStorage.setSessionDurationTime(Integer.parseInt(sSessionDurationTime));
+			sessionsStorage.setSessionDurationTime(Integer.parseInt(sSessionDurationTime));
 		} catch (NumberFormatException e) {
 			throw new IllegalArgumentException("Parameter 'session-duration-time' in 'sessions-storage' section must be an integer.");
 		}
 		
-		return sessionStorage;
+		return sessionsStorage;
 	}
 	
 	private ResourcesStorage parseResouresStorage(Properties properties) {
-		ResourcesStorage resourceMgtStorage = new ResourcesStorage();
-		parseStorage(resourceMgtStorage, properties, ResourcesStorage.NAME_RESOURCES_STORAGE);
+		ResourcesStorage resourcesStorage = new ResourcesStorage();
+		parseStorage(resourcesStorage, properties, ResourcesStorage.NAME_RESOURCES_STORAGE);
 		
-		return resourceMgtStorage;
+		return resourcesStorage;
 	}
 
 	private void parseStorage(Storage storage, Properties properties, String storageSectionName) {
 		String initSize = properties.getProperty("init-size");
 		if (initSize != null) {
 			try {
-				setStorageInitSize(sessionsStorage, convertToByteSizes(initSize));
+				storage.setInitSize(convertToByteSizes(initSize));
 			} catch (NumberFormatException e) {
 				throw new IllegalArgumentException(String.format("Parameter 'init-size' of '%s' configuration section must be an long integer.",
 						storageSectionName));
@@ -80,31 +80,24 @@ public class ClusteringConfig {
 		String maxSize = properties.getProperty("max-size");
 		if (maxSize != null) {
 			try {
-				setStorageMaxSize(sessionsStorage, convertToByteSizes(maxSize));
+				storage.setMaxSize(convertToByteSizes(maxSize));
 			} catch (Exception e) {
 				throw new IllegalArgumentException(String.format("Parameter 'max-size' of '%s' configuration section must be an long integer.",
 						storageSectionName));
 			}
 		}
 		
+		String backups = properties.getProperty("backups");
+		if (backups != null) {
+			storage.setBackups(Integer.parseInt(backups));
+		}
+		
 		String persistenceEnabled = properties.getProperty("persistence-enabled");
 		if (persistenceEnabled != null) {
-			setStoragePersisenceEnabled(storage, persistenceEnabled);
+			storage.setPersistenceEnabled(Boolean.parseBoolean(persistenceEnabled));
 		}
 	}
-
-	private void setStoragePersisenceEnabled(Storage storage, String persistenceEnabled) {
-		storage.setPersistenceEnabled(Boolean.parseBoolean(persistenceEnabled));
-	}
-
-	private void setStorageMaxSize(Storage storage, long maxSize) {
-		storage.setMaxSize(maxSize);
-	}
-
-	private void setStorageInitSize(Storage storage, long initSize) {
-		storage.setInitSize(initSize);
-	}
-
+	
 	private StorageGlobal parseStorageGlobal(Properties properties) {
 		StorageGlobal storageGlobal = new StorageGlobal();
 		String workDirectory = properties.getProperty("work-directory");

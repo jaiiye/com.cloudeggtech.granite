@@ -1,5 +1,6 @@
 package com.cloudeggtech.granite.cluster.integration;
 
+import com.cloudeggtech.basalt.protocol.core.JabberId;
 import com.cloudeggtech.granite.framework.core.annotations.Component;
 import com.cloudeggtech.granite.framework.core.connection.IConnectionContext;
 import com.cloudeggtech.granite.framework.core.event.IEvent;
@@ -21,16 +22,20 @@ public class Any2EventMessageReceiver extends LocalMessageIntegrator {
 	protected String getMessageQueueMaxSizeConfigurationKey() {
 		return CONFIGURATION_KEY_ANY_2_EVENT_MESSAGE_QUEUE_MAX_SIZE;
 	}
-
+	
+	@Override
+	public IConnectionContext getConnectionContext(JabberId sessionJid) {
+		return doGetConnectionContext(null);
+	}
+	
 	@Override
 	protected IConnectionContext doGetConnectionContext(ISession session) {
-		return new EventConnectionContext(messageChannel, session);
+		return new EventConnectionContext(messageChannel);
 	}
 	
 	private class EventConnectionContext extends AbstractConnectionContext {
-
-		public EventConnectionContext(IMessageChannel messageChannel, ISession session) {
-			super(messageChannel, session);
+		public EventConnectionContext(IMessageChannel messageChannel) {
+			super(messageChannel, null);
 		}
 		
 		@Override

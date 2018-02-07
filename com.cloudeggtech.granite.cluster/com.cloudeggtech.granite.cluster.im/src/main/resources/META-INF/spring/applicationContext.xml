@@ -19,4 +19,5 @@
 		
 		<granite:component component-id="resources.service" ref="resourcesService"/>
 		<granite:component component-id="resources.register" ref="resourcesService"/>		
+		<granite:component component-id="subscription.service" ref="subscriptionService"/>		
 </beans>

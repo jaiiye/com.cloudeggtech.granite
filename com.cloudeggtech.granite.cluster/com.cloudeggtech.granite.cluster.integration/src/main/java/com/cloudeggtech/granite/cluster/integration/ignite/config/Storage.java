@@ -3,6 +3,7 @@ package com.cloudeggtech.granite.cluster.integration.ignite.config;
 public class Storage {
 	protected long initSize;
 	protected long maxSize;
+	protected int backups;
 	protected boolean persistenceEnabled;
 	
 	public long getInitSize() {
@@ -19,6 +20,14 @@ public class Storage {
 	
 	public void setMaxSize(long maxSize) {
 		this.maxSize = maxSize;
+	}
+	
+	public int getBackups() {
+		return backups;
+	}
+
+	public void setBackups(int backups) {
+		this.backups = backups;
 	}
 
 	public boolean isPersistenceEnabled() {

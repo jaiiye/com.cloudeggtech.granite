@@ -13,6 +13,7 @@ public class CachesStorage extends Storage {
 	public CachesStorage() {
 		initSize = 64 * 1024 * 1024;
 		maxSize = 256 * 1024 * 1024;
+		backups = 1;
 		persistenceEnabled = false;
 		evicationPolicy = EvictionPolicy.RANDOM_2_LRU;
 	}

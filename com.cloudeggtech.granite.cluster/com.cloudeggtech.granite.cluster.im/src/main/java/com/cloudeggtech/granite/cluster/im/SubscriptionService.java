@@ -79,7 +79,7 @@ public class SubscriptionService implements ISubscriptionService {
 				append("contact", subscription.getContact()).
 				append("name", subscription.getName()).
 				append("groups", subscription.getGroups()).
-				append("state", subscription.getState());
+				append("state", subscription.getState().toString());
 		
 		getSubscriptionsCollection().insertOne(doc);
 	}
@@ -93,7 +93,7 @@ public class SubscriptionService implements ISubscriptionService {
 	@Override
 	public void updateState(String user, String contact, State state) {
 		getSubscriptionsCollection().updateOne(Filters.and(Filters.eq("user", user), Filters.eq("contact", contact)),
-				Updates.set("state", state));
+				Updates.set("state", state.toString()));
 	}
 
 	@Override
@@ -221,7 +221,7 @@ public class SubscriptionService implements ISubscriptionService {
 		Document doc = new Document().
 				append("user", notification.getUser()).
 				append("contact", notification.getContact()).
-				append("subscription_type", notification.getSubscriptionType());
+				append("subscription_type", notification.getSubscriptionType().toString());
 		getSubscriptionNotificationsCollection().insertOne(doc);
 	}
 
@@ -231,7 +231,7 @@ public class SubscriptionService implements ISubscriptionService {
 				Filters.and(
 						Filters.eq("user", notification.getUser()),
 						Filters.eq("contact", notification.getContact()),
-						Filters.eq("subscription_type", notification.getSubscriptionType())
+						Filters.eq("subscription_type", notification.getSubscriptionType().toString())
 				)
 		);
 	}

@@ -31,13 +31,13 @@ public class ResourcesService implements IResourcesService, IResourcesRegister, 
 	
 	private class ResourcesStorageWrapper {
 		private Ignite ignite;
-		private volatile IgniteCache<JabberId, IResource[]> resourcesStorage;
+		private volatile IgniteCache<JabberId, Object[]> resourcesStorage;
 		
 		public ResourcesStorageWrapper(Ignite ignite) {
 			this.ignite = ignite;
 		}
 		
-		public IgniteCache<JabberId, IResource[]> getResourcesStorage() {
+		public IgniteCache<JabberId, Object[]> getResourcesStorage() {
 			if (resourcesStorage != null) {
 				return resourcesStorage;
 			}
@@ -53,7 +53,7 @@ public class ResourcesService implements IResourcesService, IResourcesRegister, 
 		}
 	}
 	
-	private IgniteCache<JabberId, IResource[]> getResourcesStorage() {
+	private IgniteCache<JabberId, Object[]> getResourcesStorage() {
 		return resourcesStorageWrapper.getResourcesStorage();
 	}
 	
@@ -70,18 +70,18 @@ public class ResourcesService implements IResourcesService, IResourcesRegister, 
 		new ResourceRegistrationTemplate().lockAndRun(jid.getBareId(), new ResourceRegistrationRunner() {
 			@Override
 			public void run() {
-				IResource[] existed = getResourcesStorage().get(jid);
+				Object[] existed = getResourcesStorage().get(jid.getBareId());
 				if (existed == null) {
 					IResource resource = new Resource(jid);
-					getResourcesStorage().put(jid, new IResource[] {resource});
+					getResourcesStorage().put(jid.getBareId(), new IResource[] {resource});
 				} else {
-					IResource[] afterChange = new IResource[existed.length];
+					Object[] afterChange = new Object[existed.length + 1];
 					for (int i = 0; i < existed.length; i++) {
 						afterChange[i] = existed[i];
 					}
 					afterChange[afterChange.length - 1] = new Resource(jid);
 					
-					getResourcesStorage().put(jid, afterChange);
+					getResourcesStorage().put(jid.getBareId(), afterChange);
 				}
 			}
 		});
@@ -111,30 +111,29 @@ public class ResourcesService implements IResourcesService, IResourcesRegister, 
 		new ResourceRegistrationTemplate().lockAndRun(jid.getBareId(), new ResourceRegistrationRunner() {
 			@Override
 			public void run() throws ResourceRegistrationException {
-				IResource[] existed = getResourcesStorage().get(jid);
+				Object[] existed = getResourcesStorage().get(jid.getBareId());
 				if (existed == null) {
 					throw new ResourceRegistrationException(String.format("Can't find resource '%s' in resources storage.", jid));
 				} else {
 					if (existed.length == 1) {
-						if (existed[0].getJid().equals(jid)) {
-							getResourcesStorage().remove(jid);
+						if (((IResource)existed[0]).getJid().equals(jid)) {
+							getResourcesStorage().remove(jid.getBareId());
 							return;
 						} else {
-							throw new ResourceRegistrationException(String.format("Can't find resource '%s' in resources storage.", jid));
-						}
+							throw new ResourceRegistrationException(String.format("Can't find resource '%s' in resources storage.", jid));						}
 					}
 					
-					IResource[] afterChange = new IResource[existed.length - 1];
+					Object[] afterChange = new Object[existed.length - 1];
 					int copyingIndex = 0;
 					for (int i = 0; i < existed.length; i++) {
-						if (existed[i].getJid().equals(jid)) {
+						if (((IResource)existed[i]).getJid().equals(jid)) {
 							continue;
 						}
 						
 						afterChange[copyingIndex++] = existed[i];
 					}
 					
-					getResourcesStorage().put(jid, afterChange);
+					getResourcesStorage().put(jid.getBareId(), afterChange);
 				}
 			}
 		});
@@ -148,9 +147,9 @@ public class ResourcesService implements IResourcesService, IResourcesRegister, 
 			
 			@Override
 			public void run() throws ResourceRegistrationException {
-				IResource[] resources = getResources(jid);
+				Object[] resources = getResourcesStorage().get(jid.getBareId());
 				if (resources == null) {
-					throw new ProtocolException(new InternalServerError(String.format("Can't find resource '%s' in resources storage.", jid)));					
+					throw new ProtocolException(new InternalServerError(String.format("Can't find resource '%s' in resources storage.", jid)));
 				}
 				
 				boolean rosterRequestedSet = false;
@@ -163,10 +162,10 @@ public class ResourcesService implements IResourcesService, IResourcesRegister, 
 				}
 				
 				if (!rosterRequestedSet) {
-					throw new ProtocolException(new InternalServerError(String.format("Can't find resource '%s' in resources storage.", jid)));					
+					throw new ProtocolException(new InternalServerError(String.format("Can't find resource '%s' in resources storage.", jid)));
 				}
 				
-				getResourcesStorage().put(jid, resources);
+				getResourcesStorage().put(jid.getBareId(), resources);
 			}
 		});
 	}
@@ -179,9 +178,9 @@ public class ResourcesService implements IResourcesService, IResourcesRegister, 
 			
 			@Override
 			public void run() throws ResourceRegistrationException {
-				IResource[] resources = getResources(jid);
+				Object[] resources = getResourcesStorage().get(jid.getBareId());
 				if (resources == null) {
-					throw new ProtocolException(new InternalServerError(String.format("Can't find resource '%s' in resources storage.", jid)));					
+					throw new ProtocolException(new InternalServerError(String.format("Can't find resource '%s' in resources storage.", jid)));
 				}
 				
 				boolean broadcastPresenceSet = false;
@@ -194,10 +193,10 @@ public class ResourcesService implements IResourcesService, IResourcesRegister, 
 				}
 				
 				if (!broadcastPresenceSet) {
-					throw new ProtocolException(new InternalServerError(String.format("Can't find resource '%s' in resources storage.", jid)));					
+					throw new ProtocolException(new InternalServerError(String.format("Can't find resource '%s' in resources storage.", jid)));
 				}
 				
-				getResourcesStorage().put(jid, resources);
+				getResourcesStorage().put(jid.getBareId(), resources);
 			}
 		});
 	}
@@ -210,9 +209,9 @@ public class ResourcesService implements IResourcesService, IResourcesRegister, 
 			
 			@Override
 			public void run() throws ResourceRegistrationException {
-				IResource[] resources = getResources(jid);
+				Object[] resources = getResourcesStorage().get(jid.getBareId());
 				if (resources == null) {
-					throw new ProtocolException(new InternalServerError(String.format("Can't find resource '%s' in resources storage.", jid)));					
+					throw new ProtocolException(new InternalServerError(String.format("Can't find resource '%s' in resources storage.", jid)));
 				}
 				
 				boolean availableSet = false;
@@ -225,10 +224,10 @@ public class ResourcesService implements IResourcesService, IResourcesRegister, 
 				}
 				
 				if (!availableSet) {
-					throw new ProtocolException(new InternalServerError(String.format("Can't find resource '%s' in resources storage.", jid)));					
+					throw new ProtocolException(new InternalServerError(String.format("Can't find resource '%s' in resources storage.", jid)));
 				}
 				
-				getResourcesStorage().put(jid, resources);
+				getResourcesStorage().put(jid.getBareId(), resources);
 			}
 		});
 	}
@@ -242,15 +241,23 @@ public class ResourcesService implements IResourcesService, IResourcesRegister, 
 			
 			@Override
 			public void run() throws ResourceRegistrationException {
-				IResource[] resources = getResourcesStorage().get(to.getBareId());
+				Object[] resources = getResourcesStorage().get(to.getBareId());
+				
+				if (resources == null) {
+					throw new ProtocolException(new InternalServerError(String.format("Can't find resource '%s' in resources storage.", to)));
+				}
+				
 				boolean directedPresenceSet = false;
 				for (int i = 0; i < resources.length; i++) {
-					if (resources[i].getJid().equals(to)) {
+					if (((IResource)resources[i]).getJid().equals(to)) {
 						Resource resource = (Resource)resources[i];
 						resource.setDirectedPresence(from, presence);
 						directedPresenceSet = true;
 					}
 				}
+				
+				if (!directedPresenceSet)
+					throw new ProtocolException(new InternalServerError(String.format("Can't find resource '%s' in resources storage.", to)));
 				
 				if (directedPresenceSet) {
 					getResourcesStorage().put(to.getBareId(), resources);
@@ -261,7 +268,17 @@ public class ResourcesService implements IResourcesService, IResourcesRegister, 
 
 	@Override
 	public IResource[] getResources(JabberId jid) {
-		return getResourcesStorage().get(jid.getBareId());
+		Object[] objects = getResourcesStorage().get(jid.getBareId());
+		if (objects == null ||objects.length == 0)
+			return new IResource[0];
+		
+		IResource[] resources = new IResource[objects.length];
+		
+		for (int i = 0; i < objects.length; i++) {
+			resources[i] = (IResource)objects[i];
+		}
+		
+		return resources;
 	}
 
 	@Override
@@ -269,7 +286,7 @@ public class ResourcesService implements IResourcesService, IResourcesRegister, 
 		checkFullJid(jid);
 		
 		IResource[] resources = getResources(jid.getBareId());
-		if (resources == null)
+		if (resources == null || resources.length == 0)
 			return null;
 		
 		for (IResource resource : resources) {
