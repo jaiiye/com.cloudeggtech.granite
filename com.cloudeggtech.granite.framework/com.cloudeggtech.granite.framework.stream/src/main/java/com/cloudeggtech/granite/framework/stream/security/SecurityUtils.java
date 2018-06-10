@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.net.InetAddress;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
@@ -16,9 +17,12 @@ import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
+import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -62,7 +66,7 @@ public class SecurityUtils {
 		}
 	}
 	
-	public static X509Certificate createX509Certificate(String subjectDNX500Name, Date startDate, Date expireDate,
+	public static X509Certificate createX509Certificate(String hostName, Date startDate, Date expireDate,
 				KeyPair keyPair, String signatureAlgorithm) throws SecurityException {
 		try {
 	        byte[] serno = new byte[8];
@@ -71,7 +75,7 @@ public class SecurityUtils {
 	        random.nextBytes(serno);
 	        BigInteger serialNumber = (new java.math.BigInteger(serno)).abs();
 	        
-	        return createX509Certificate(serialNumber, subjectDNX500Name, startDate,
+	        return createX509Certificate(serialNumber, hostName, startDate,
 	        		expireDate, keyPair, signatureAlgorithm);
 		} catch (Exception e) {
 			throw new SecurityException("Can't create a certificate.", e);
@@ -79,18 +83,20 @@ public class SecurityUtils {
 
 	}
 	
-	public static X509Certificate createX509Certificate(BigInteger serialNumber, String subjectDNX500Name,
+	public static X509Certificate createX509Certificate(BigInteger serialNumber, String hostName,
 			Date startDate, Date expireDate, KeyPair keyPair, String signatureAlgorithm) throws SecurityException {
-		return createX509Certificate(serialNumber, subjectDNX500Name, startDate, expireDate, keyPair,
+		return createX509Certificate(serialNumber, hostName, startDate, expireDate, keyPair,
 				signatureAlgorithm, null, null);
 	}
 
-	public static X509Certificate createX509Certificate(BigInteger serialNumber, String subjectDNX500Name,
+	public static X509Certificate createX509Certificate(BigInteger serialNumber, String hostName,
 			Date startDate, Date expireDate, KeyPair keyPair, String signatureAlgorithm,
 			X509Certificate parentCertificate, PrivateKey parentPrivateKey) throws SecurityException {
 		boolean caSignature = false;
 		if (parentCertificate != null && parentPrivateKey != null)
 			caSignature = true;
+		
+		String subjectDNX500Name = "CN=" + hostName;
 		
 		X500Name issuerDNX500Name;
 		if (caSignature) {
@@ -109,6 +115,13 @@ public class SecurityUtils {
 				builder.addExtension(X509Extension.authorityKeyIdentifier,
 						false, new JcaX509ExtensionUtils().createAuthorityKeyIdentifier(SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded())));
 			}
+			
+			if (isIpv4Address(hostName)) {
+				InetAddress inetAddress = InetAddress.getByName(hostName);
+				GeneralNames subjectAlterniativeNames = new GeneralNames(new GeneralName(GeneralName.iPAddress, new DEROctetString(inetAddress.getAddress())));
+				builder.addExtension(X509Extension.subjectAlternativeName, false, subjectAlterniativeNames);
+			}
+			
 			builder.addExtension(X509Extension.subjectKeyIdentifier,
 					false, new JcaX509ExtensionUtils().createSubjectKeyIdentifier(SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded())));
 			builder.addExtension(X509Extension.basicConstraints, false, new BasicConstraints(false));
@@ -126,6 +139,12 @@ public class SecurityUtils {
 		} catch (Exception e) {
 			throw new SecurityException("Can't create a certificate.", e);
 		}
+	}
+	
+	private static boolean isIpv4Address(String address) {
+		String PATTERN = "^((0|1\\d?\\d?|2[0-4]?\\d?|25[0-5]?|[3-9]\\d?)\\.){3}(0|1\\d?\\d?|2[0-4]?\\d?|25[0-5]?|[3-9]\\d?)$";    
+		
+		return address.matches(PATTERN);
 	}
 	
 	public static KeyStore loadOrCreateKeyStore(File keyStoreFile, char[] password) throws SecurityException {

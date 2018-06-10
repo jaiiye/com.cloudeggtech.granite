@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TlsEnvironment {
-	private static final String SIGNATURE_ALGORITHM_MD5_WITH_RSA = "MD5withRSA";
+	private static final String SIGNATURE_ALGORITHM_SHA256_WITH_RSA = "SHA256withRSA";
 	private static final String ALGORITHM_RSA = "RSA";
 	private static final String ALIAS_HOST_KEY = "host-key";
 	private static final String NAME_KEY_STORE = "keystore";
@@ -81,8 +81,7 @@ public class TlsEnvironment {
 		hundredYearsLater.set(Calendar.YEAR, now.get(Calendar.YEAR) + 100);
 		Date expireDate = hundredYearsLater.getTime();
 		
-		String subjectDNX500Name = "CN=" + hostName;
-		Certificate certificate = SecurityUtils.createX509Certificate(subjectDNX500Name, startDate, expireDate, keyPair, SIGNATURE_ALGORITHM_MD5_WITH_RSA);
+		Certificate certificate = SecurityUtils.createX509Certificate(hostName, startDate, expireDate, keyPair, SIGNATURE_ALGORITHM_SHA256_WITH_RSA);
 		keyStoreManager.addKey(ALIAS_HOST_KEY, keyPair.getPrivate(), new Certificate[] {certificate}, DEFAULT_PASSWORD);
 		
 		keyStoreManager.save();
