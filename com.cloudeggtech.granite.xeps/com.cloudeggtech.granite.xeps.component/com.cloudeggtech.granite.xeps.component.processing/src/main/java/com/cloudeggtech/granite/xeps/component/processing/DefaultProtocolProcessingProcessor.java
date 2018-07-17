@@ -414,7 +414,7 @@ public class DefaultProtocolProcessingProcessor implements com.cloudeggtech.gran
 			context = new AttachOriginalMessageConnectionContextProxy(context, originalMessage);
 		}
 		
-		if (logger.isTraceEnabled() && (object instanceof Stanza)) {
+		if ((object instanceof Stanza) && logger.isTraceEnabled()) {
 			logger.trace("processing stanza message. original message: {}", ((Stanza)object).getOriginalMessage());
 		}
 		

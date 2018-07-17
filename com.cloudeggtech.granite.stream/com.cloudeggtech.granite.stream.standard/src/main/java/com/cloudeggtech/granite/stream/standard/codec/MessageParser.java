@@ -58,7 +58,8 @@ public class MessageParser implements IMessageParser {
 			}
 		}
 		
-		logger.trace("Message decoding: {}.", new String(bytes, 0, readBytes));
+		if (logger.isTraceEnabled())
+			logger.trace("Message decoding: {}.", new String(bytes, 0, readBytes));
 		
 		return preprocessor.parse(bytes, readBytes);
 	}

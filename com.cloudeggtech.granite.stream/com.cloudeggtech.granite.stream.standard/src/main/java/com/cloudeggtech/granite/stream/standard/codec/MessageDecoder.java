@@ -24,14 +24,16 @@ public class MessageDecoder extends CumulativeProtocolDecoder {
 		try {
 			messages = messageParser.parse(in);
 		} catch (Exception e) {
-			logger.debug("Decode error.", e);
+			if (logger.isDebugEnabled())
+				logger.debug("Decode error.", e);
 			
 			throw e;
 		}
 		
 		if (messages != null) {
 			for (String message : messages) {
-				logger.trace("Message decoded: {}.", message);
+				if (logger.isTraceEnabled())
+					logger.trace("Message decoded: {}.", message);
 				
 				out.write(message);
 			}

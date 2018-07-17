@@ -323,7 +323,7 @@ public class MinimumMessageParsingProcessor implements IMessageProcessor, IBundl
 		
 		Object out = parseMessage(context, msg);
 		
-		if (out == null) {
+		if (out == null && logger.isWarnEnabled()) {
 			logger.warn("Ignored message. Session JID: {}. Message: {}.",
 					message.getHeader().get(IMessage.KEY_SESSION_JID),message.getPayload());
 			return;
@@ -344,7 +344,8 @@ public class MinimumMessageParsingProcessor implements IMessageProcessor, IBundl
 	}
 
 	private Object parseMessage(IConnectionContext context, String message) {
-		logger.trace("Parsing message: {}.", message);
+		if (logger.isTraceEnabled())
+			logger.trace("Parsing message: {}.", message);
 		
 		Object out = null;
 		try {
@@ -361,11 +362,13 @@ public class MinimumMessageParsingProcessor implements IMessageProcessor, IBundl
 					throw new ProtocolException(new InvalidFrom());
 				}
 				
-				logger.trace("Stanza parsed. Original message: {}.", message);
+				if (logger.isTraceEnabled())
+					logger.trace("Stanza parsed. Original message: {}.", message);
 				
 				// if server doesn't understand the extended namespaces(rfc3921 2.4)
 				if (FlawedProtocolObject.isFlawed(stanza)) {
-					logger.trace("Flawed stanza parsed. Original message: {}.", message);
+					if (logger.isTraceEnabled())
+						logger.trace("Flawed stanza parsed. Original message: {}.", message);
 					
 					if (isServerRecipient(stanza)) {
 						if (stanza instanceof Iq) {
@@ -419,7 +422,8 @@ public class MinimumMessageParsingProcessor implements IMessageProcessor, IBundl
 			}
 			
 			out = error;
-			logger.trace("Parsing protocol exception. original message: {}.", message);
+			if (logger.isTraceEnabled())
+				logger.trace("Parsing protocol exception. original message: {}.", message);
 		} catch (RuntimeException e) {
 			out = new InternalServerError(CommonUtils.getInternalServerErrorMessage(e));
 			logger.error(String.format("Parsing error. original message: %s.", message), e);
